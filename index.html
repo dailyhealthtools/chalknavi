@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2f4b3e">
+<!-- 공개용 자동 생성 파일입니다. 원본은 비공개 저장소에 있습니다. -->
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<title>칠판 네비</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
+<style>
+/* Layout: one wood-framed chalkboard on a walnut wall. Distance on top, two games below (race lanes / navi road),
+   grown-up settings and the chalk tray at the foot. Deliberately a single dark look: it is a chalkboard. */
+:root {
+  color-scheme: dark;
+  --wall: #2b231e;
+  --wall-line: #241d19;
+  --frame: #a3733f;
+  --frame-hi: #c39159;
+  --frame-lo: #6c4826;
+  --board: #2f4b3e;
+  --board-deep: #263f34;
+  --chalk: #f3f0e6;
+  --chalk-dim: #c4cdc3;
+  --chalk-faint: rgba(243, 240, 230, .26);
+  --chalk-ghost: rgba(243, 240, 230, .09);
+  --yellow: #f6d86e;
+  --pink: #f5a8b9;
+  --blue: #a6d4f3;
+  --orange: #f7bb83;
+  --ink: #1f3329;
+  --font-display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --font-emoji: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  --pad: clamp(12px, 3.5vw, 36px);
+  --hand: 16px 22px 14px 20px / 20px 14px 22px 16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--wall);
+  background-image: repeating-linear-gradient(90deg, transparent 0 118px, var(--wall-line) 118px 121px);
+  color: var(--chalk);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 28px;
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+.chalk { text-shadow: 0 0 1px rgba(243, 240, 230, .45), 0 0 8px rgba(243, 240, 230, .08); }
+
+/* ---------- board ---------- */
+.board {
+  max-width: 940px;
+  margin: 0 auto;
+  border: 12px solid;
+  border-color: var(--frame-hi) var(--frame) var(--frame-lo) var(--frame);
+  border-radius: 8px;
+  background-color: var(--board);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .11 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 60% 40% at 18% 22%, rgba(243, 240, 230, .06), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 82% 68%, rgba(243, 240, 230, .05), transparent 70%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35), inset 0 0 70px rgba(0, 0, 0, .35), 0 14px 36px rgba(0, 0, 0, .45);
+  padding: var(--pad) var(--pad) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+  overflow-x: clip;   /* 마지막 안전장치: 무엇이 넘쳐도 칠판 밖으로 나가지 않게 */
+}
+@media (max-width: 560px) { .board { border-width: 6px; gap: 18px; } }
+
+/* 한 줄짜리 격자들은 내용이 길어도 칠판 폭보다 넓어지지 않게 (휴대폰 글씨 크기를 키워도 안전) */
+.top, .dist, .places-wrap, .add-form, .panel, .lanes, .lane, .navi-controls, .ctl, .screen, .log, .log-head, .speed-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.top { display: grid; gap: 2px; }
+.brand { font-family: var(--font-display); color: var(--yellow); font-size: 17px; letter-spacing: .08em; }
+h1 { font-size: clamp(28px, 6.4vw, 46px); line-height: 1.2; }
+
+/* ---------- buttons ---------- */
+.btn-chalk {
+  min-height: 48px;
+  padding: 6px 14px;
+  border: 2px solid var(--chalk-faint);
+  border-radius: var(--hand);
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 19px;
+  color: var(--chalk);
+  transition: background-color .15s, border-color .15s, transform .1s;
+}
+.btn-chalk:hover { border-color: var(--chalk-dim); background: var(--chalk-ghost); }
+.btn-chalk:active { transform: scale(.97); }
+.btn-go {
+  min-height: 52px;
+  padding: 8px 24px;
+  border: 0;
+  border-radius: var(--hand);
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .28);
+  transition: transform .1s, opacity .15s;
+}
+.btn-go:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, .28); }
+.btn-go:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---------- distance ---------- */
+.dist { display: grid; gap: 12px; }
+.km-field {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 3px solid var(--chalk-faint);
+  padding-bottom: 2px;
+}
+.km-field:focus-within { border-bottom-color: var(--yellow); }
+.km-field label { font-family: var(--font-display); font-size: 20px; color: var(--chalk-dim); flex: none; }
+#km {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  padding: 0;
+  color: var(--chalk);
+  font-family: var(--font-display);
+  font-size: clamp(46px, 12vw, 78px);
+  line-height: 1.15;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 1px rgba(243, 240, 230, .45);
+}
+.unit { font-family: var(--font-display); font-size: clamp(26px, 6vw, 40px); color: var(--chalk-dim); }
+/* 한 줄에 다 안 들어가면(글씨를 크게 한 휴대폰) 두 줄로 나뉨 */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.7em, 1fr)); gap: 6px; font-size: 18px; }
+.steps .btn-chalk { min-width: 0; padding-inline: 2px; font-size: 1em; white-space: nowrap; overflow-wrap: normal; }
+.reading { color: var(--chalk-dim); }
+.reading b { font-family: var(--font-display); font-weight: 400; color: var(--chalk); font-size: 18px; }
+.dest { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.dest label { font-family: var(--font-display); font-size: 19px; color: var(--chalk-dim); }
+.field {
+  flex: 1 1 12rem;
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px 14px;
+  background: var(--chalk-ghost);
+  border: 2px solid var(--chalk-faint);
+  border-radius: var(--hand);
+  color: var(--chalk);
+  font-family: var(--font-display);
+  font-size: 21px;
+}
+.field::placeholder { color: var(--chalk-faint); }
+.field:focus { outline: none; border-color: var(--yellow); }
+.places-wrap { display: grid; gap: 8px; }
+.places-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; }
+.places-label { font-size: 14px; color: var(--chalk-dim); }
+.link-btn {
+  min-height: 40px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 0;
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 17px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+/* 칸 폭을 글씨 크기(em)에 맞춰서, 글씨를 크게 하면 한 줄에 하나씩 */
+.places { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.2em), 1fr)); gap: 8px; }
+.place > span:not(.pi):not(.x) { min-width: 0; }
+.place { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 17px; line-height: 1.2; text-align: left; }
+.place .pi { font-family: var(--font-emoji); font-size: 22px; flex: none; }
+.place small { display: block; font-family: var(--font-body); font-size: 13px; color: var(--chalk-dim); }
+.place[aria-pressed="true"] { border-color: var(--yellow); background: rgba(246, 216, 110, .14); }
+.place.add { justify-content: center; border-style: dashed; color: var(--chalk-dim); }
+/* 이름이 긴 버튼(띄어쓰기 빼고 6글자 이상)은 좁은 화면에서 두 칸을 써서 단어 중간에서 줄이 바뀌지 않게 */
+@media (max-width: 520px) { .place.wide { grid-column: 1 / -1; } }
+.place.add[aria-expanded="true"] { border-color: var(--yellow); color: var(--chalk); }
+.place .x {
+  display: none;
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--pink);
+  color: var(--ink);
+  font-size: 15px;
+}
+.places.editing .place.mine { border-color: var(--pink); }
+.places.editing .place.mine .x { display: flex; }
+.places.editing .place:not(.mine) { opacity: .35; pointer-events: none; }
+.undo { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; color: var(--chalk-dim); }
+.add-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  border: 2px dashed var(--chalk-faint);
+  border-radius: var(--hand);
+  background: var(--chalk-ghost);
+}
+.add-title { font-family: var(--font-display); font-size: 20px; }
+.add-hint { font-size: 14px; color: var(--chalk-dim); }
+.icon-pick { display: flex; flex-wrap: wrap; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.icon-pick legend { padding: 0; margin-bottom: 6px; font-family: var(--font-display); font-size: 18px; color: var(--chalk-dim); }
+.icon-pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.icon-pick label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.95em;
+  height: 1.95em;
+  border: 2px solid var(--chalk-faint);
+  border-radius: 12px;
+  font-family: var(--font-emoji);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.icon-pick input:checked + label { border-color: var(--yellow); background: rgba(246, 216, 110, .16); }
+.icon-pick input:focus-visible + label { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.add-row { display: flex; align-items: center; gap: 10px; }
+.add-row label { flex: none; width: 2.6em; font-family: var(--font-display); font-size: 18px; color: var(--chalk-dim); }
+.add-row .field { flex: 1 1 0; width: 0; min-width: 0; }
+.add-row .u { font-family: var(--font-display); font-size: 18px; color: var(--chalk-dim); }
+.add-error { color: var(--pink); }
+.add-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.note {
+  padding: 10px 14px;
+  border: 2px dashed rgba(246, 216, 110, .5);
+  border-radius: var(--hand);
+}
+
+/* ---------- tabs ---------- */
+.tabs { display: flex; gap: 6px; border-bottom: 2px solid var(--chalk-faint); }
+.tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 54px;
+  padding: 8px 6px;
+  background: transparent;
+  border: 0;
+  border-bottom: 4px solid transparent;
+  margin-bottom: -2px;
+  font-family: var(--font-display);
+  font-size: clamp(17px, 4.4vw, 23px);
+  color: var(--chalk-dim);
+}
+.tab[aria-selected="true"] { color: var(--chalk); border-bottom-color: var(--yellow); }
+.panel { display: grid; gap: 18px; }
+
+/* ---------- race ---------- */
+.race-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.race-title { font-size: clamp(21px, 5vw, 28px); }
+.hl { color: var(--yellow); }
+.race-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.clock { font-family: var(--font-display); font-size: 18px; color: var(--chalk-dim); font-variant-numeric: tabular-nums; }
+.lanes { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.lane { display: grid; gap: 4px; }
+.lane-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "who time" "spd time";
+  align-items: end;
+  column-gap: 12px;
+}
+.who { grid-area: who; display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 22px; }
+.who .emo { font-family: var(--font-emoji); }
+.medal { font-size: 19px; color: var(--chalk-dim); }
+.spd { grid-area: spd; font-size: 14px; color: var(--chalk-dim); }
+.time {
+  grid-area: time;
+  font-family: var(--font-display);
+  font-size: clamp(23px, 5.4vw, 32px);
+  color: var(--c);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.track-wrap { display: flex; align-items: flex-end; gap: 4px; }
+.track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 50px;
+  overflow: hidden;
+  border-left: 3px solid var(--chalk);
+  background: linear-gradient(90deg, var(--chalk-faint) 0 55%, transparent 55%) left bottom / 16px 2px repeat-x;
+}
+/* 움직임은 transform만 바꿔서 휴대폰에서도 끊기지 않게 (레이아웃을 다시 계산하지 않음) */
+.trail {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: calc(100% - 22px);
+  height: 3px;
+  border-radius: 2px;
+  background: var(--c);
+  transform-origin: left center;
+  transform: scaleX(0);
+  will-change: transform;
+}
+.rail {
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  width: calc(100% - 44px);
+  height: 40px;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+.mover {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 44px;
+  text-align: center;
+  font-family: var(--font-emoji);
+  font-size: 34px;
+  line-height: 1;
+}
+.e { display: inline-block; }
+.e.flip { transform: scaleX(-1); }
+.e.tilt { transform: rotate(45deg); }
+.flag { font-family: var(--font-emoji); font-size: 28px; line-height: 1; padding-bottom: 4px; }
+.lane-sub { min-height: 1.55em; font-size: 14px; color: var(--chalk-dim); font-variant-numeric: tabular-nums; }
+.lane.arrived .lane-sub { color: var(--c); }
+.fact { font-family: var(--font-display); font-size: 19px; line-height: 1.5; }
+.fact b { font-weight: 400; color: var(--yellow); }
+
+/* ---------- navi ---------- */
+.navi-controls { display: grid; gap: 14px; }
+.ctl { display: grid; gap: 8px; }
+.ctl-label { font-size: 14px; color: var(--chalk-dim); }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg .btn-chalk[aria-pressed="true"] {
+  border-color: var(--c, var(--yellow));
+  background: var(--chalk-ghost);
+  box-shadow: inset 0 -4px 0 var(--c, var(--yellow));
+}
+.seg .emo { font-family: var(--font-emoji); }
+.pace-hint { font-size: 14px; color: var(--chalk-dim); }
+.voice { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-family: var(--font-display); font-size: 18px; cursor: pointer; justify-self: start; }
+.voice input { width: 22px; height: 22px; accent-color: var(--yellow); margin: 0; }
+
+.screen {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 18px clamp(14px, 3vw, 26px);
+  background: var(--board-deep);
+  border: 2px solid var(--chalk-ghost);
+  border-radius: 18px;
+  box-shadow: inset 0 2px 18px rgba(0, 0, 0, .25);
+}
+.screen-dest { font-family: var(--font-display); font-size: clamp(18px, 4.6vw, 24px); color: var(--chalk-dim); }
+.screen-dest span { color: var(--chalk); }
+/* 남은 거리와 시간은 늘 두 줄로. 숫자가 줄어들며 한 줄로 합쳐지면 아래 길 그림이 위로 튐 */
+.screen-nums { display: grid; grid-template-columns: minmax(0, 1fr); }
+.road-wrap { position: relative; }
+/* 길 위 탈것: SVG 글자 대신 HTML 요소를 transform으로 옮겨서 휴대폰에서도 떨리지 않게 */
+.veh {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-emoji);
+  line-height: 1;
+  white-space: nowrap;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
+}
+.bigkm, .bigtime {
+  font-family: var(--font-display);
+  font-size: clamp(44px, 12vw, 84px);
+  line-height: 1.08;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 1px rgba(243, 240, 230, .45);
+}
+/* 큰 숫자는 늘 한 줄. 칸보다 길면 글자를 transform으로 줄여서(높이는 그대로) 줄바꿈이나 튀는 일이 없게 */
+.bigkm, .bigtime { white-space: nowrap; min-width: 0; }
+.fit { display: inline-block; transform-origin: 0 50%; }
+.bigkm .u { font-size: .5em; color: var(--chalk-dim); margin-left: 4px; }
+.bigtime { color: var(--c); }
+#road { display: block; width: 100%; height: auto; max-width: 100%; }
+.road-band { fill: none; stroke: var(--chalk-ghost); stroke-width: 30; stroke-linecap: round; }
+.road-center { fill: none; stroke: var(--chalk-faint); stroke-width: 3; stroke-dasharray: 14 12; }
+.road-done { fill: none; stroke: var(--c); stroke-width: 7; stroke-linecap: round; }
+.cp circle { fill: var(--board-deep); stroke: var(--chalk-dim); stroke-width: 3; }
+.cp.on circle { fill: var(--c); stroke: var(--c); }
+.cp text { fill: var(--chalk-dim); font-family: var(--font-display); font-size: 22px; text-anchor: middle; }
+.cp.on text { fill: var(--chalk); }
+.emoji { font-family: var(--font-emoji); text-anchor: middle; dominant-baseline: central; }
+.road-label { fill: var(--chalk-dim); font-family: var(--font-display); font-size: 20px; text-anchor: middle; }
+.arrive {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  transform: translate(-50%, -50%) rotate(-4deg);
+  padding: 4px 24px;
+  border-radius: var(--hand);
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(34px, 9vw, 60px);
+  white-space: nowrap;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .25);
+  animation: pop .55s cubic-bezier(.2, 1.6, .4, 1) both;
+  pointer-events: none;
+}
+@keyframes pop { from { transform: translate(-50%, -50%) scale(.3) rotate(-16deg); opacity: 0; } }
+.screen-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+.log { display: grid; gap: 8px; }
+.log-head { display: grid; gap: 2px; }
+.log h3 { font-size: 23px; }
+.log-hint { font-size: 14px; color: var(--chalk-dim); }
+.log ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.log li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 18px;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 5.6vw, 29px);
+  font-variant-numeric: tabular-nums;
+  opacity: .2;
+}
+.log li .lk { min-width: 5.4em; }
+.log li.on { opacity: 1; animation: write .9s ease-out both; text-shadow: 0 0 1px rgba(243, 240, 230, .45); }
+.log li.last.on { color: var(--yellow); }
+@keyframes write { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* ---------- grown-ups ---------- */
+.grown { border-top: 2px dashed var(--chalk-faint); padding-top: 14px; }
+.grown summary { cursor: pointer; font-family: var(--font-display); font-size: 18px; color: var(--chalk-dim); min-height: 40px; display: flex; align-items: center; }
+.grown[open] summary { color: var(--chalk); }
+.speed-grid { display: grid; gap: 14px; margin-block: 12px 14px; }
+.speed-row { display: grid; grid-template-columns: 6.5rem 9.5rem minmax(0, 1fr); align-items: center; gap: 6px 14px; }
+.sp-name { font-family: var(--font-display); font-size: 19px; }
+.sp-name .emo { font-family: var(--font-emoji); }
+.sp-in { display: flex; align-items: center; gap: 6px; color: var(--chalk-dim); }
+.sp-in input {
+  width: 5.5rem;
+  min-height: 44px;
+  padding: 4px 10px;
+  background: var(--chalk-ghost);
+  border: 2px solid var(--chalk-faint);
+  border-radius: 10px;
+  color: var(--chalk);
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+.sp-in input:focus { outline: none; border-color: var(--yellow); }
+.speed-row p { font-size: 14px; color: var(--chalk-dim); }
+@media (max-width: 600px) {
+  .speed-row { grid-template-columns: auto minmax(0, 1fr); }
+  .speed-row p { grid-column: 1 / -1; }
+}
+
+.foot { font-size: 13px; color: var(--chalk-dim); max-width: 62ch; }
+
+.tray {
+  position: relative;
+  height: 16px;
+  margin: 4px calc(-1 * var(--pad)) 0;
+  background: linear-gradient(var(--frame-hi), var(--frame-lo));
+}
+.tray i, .tray b { position: absolute; bottom: 12px; border-radius: 4px; }
+.tray .c1 { left: 14%; width: 46px; height: 9px; background: var(--chalk); }
+.tray .c2 { left: calc(14% + 58px); width: 30px; height: 9px; background: var(--yellow); }
+.tray .c3 { left: calc(14% + 98px); width: 38px; height: 9px; background: var(--pink); }
+.tray .eraser { right: 12%; width: 74px; height: 18px; background: linear-gradient(#5b4636 0 55%, #3a3a3a 55%); border-radius: 4px 4px 2px 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .log li.on, .arrive { animation: none; }
+  .btn-chalk, .btn-go { transition: none; }
+}
+</style>
+</head>
+<body>
+<main class="board">
+  <header class="top">
+    <p class="brand">칠판 네비</p>
+    <h1 class="chalk">몇 km를 몇 분에 갈 수 있을까요?</h1>
+  </header>
+
+  <section class="dist" aria-label="거리 정하기">
+    <div class="km-field">
+      <label for="km">거리</label>
+      <input id="km" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="9,200">
+      <span class="unit" aria-hidden="true">km</span>
+    </div>
+    <div class="steps" id="steps" role="group" aria-label="거리 바꾸기">
+      <button type="button" class="btn-chalk" data-step="-10">−10</button>
+      <button type="button" class="btn-chalk" data-step="-1">−1</button>
+      <button type="button" class="btn-chalk" data-step="1">+1</button>
+      <button type="button" class="btn-chalk" data-step="10">+10</button>
+      <button type="button" class="btn-chalk" data-step="100">+100</button>
+    </div>
+    <p class="reading" id="reading"></p>
+    <div class="dest">
+      <label for="dest">어디까지?</label>
+      <input id="dest" class="field" type="text" maxlength="16" placeholder="목적지" autocomplete="off" value="프랑스 파리">
+    </div>
+    <div class="places-wrap">
+      <div class="places-head">
+        <p class="places-label">집(<span class="origin-name">광주</span>)에서 출발하면 (대략)</p>
+        <button type="button" class="link-btn" id="editPlaces" aria-pressed="false" hidden>고치기</button>
+      </div>
+      <div class="places" id="places"></div>
+      <p class="undo" id="undo" hidden><span id="undoText"></span><button type="button" class="link-btn" id="undoBtn">되돌리기</button></p>
+      <form class="add-form" id="addForm" hidden novalidate>
+        <p class="add-title">새 도착지 만들기</p>
+        <p class="add-hint"><span class="origin-name">광주</span>에서 얼마나 먼지 지도에서 찾아 적어 보세요. 가까운 곳은 300m처럼 적어도 돼요. 만든 도착지는 이 기기에만 저장돼요.</p>
+        <fieldset class="icon-pick" id="iconPick">
+          <legend>그림</legend>
+        </fieldset>
+        <div class="add-row">
+          <label for="addName">이름</label>
+          <input id="addName" class="field" type="text" maxlength="12" autocomplete="off" placeholder="할머니 댁">
+        </div>
+        <div class="add-row">
+          <label for="addKm">거리</label>
+          <input id="addKm" class="field" type="text" inputmode="decimal" autocomplete="off" placeholder="35">
+          <span class="u">km</span>
+        </div>
+        <p class="add-error" id="addError" role="alert" hidden></p>
+        <div class="add-btns">
+          <button type="submit" class="btn-go">저장하기</button>
+          <button type="button" class="btn-chalk" id="addCancel">그만두기</button>
+        </div>
+      </form>
+    </div>
+    <p class="note" id="note" hidden></p>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="놀이 고르기">
+    <button type="button" role="tab" class="tab" id="tab-race" aria-controls="panel-race" aria-selected="true">🏁 누가 먼저 갈까?</button>
+    <button type="button" role="tab" class="tab" id="tab-navi" aria-controls="panel-navi" aria-selected="false">🧭 네비 놀이</button>
+  </div>
+
+  <section class="panel" id="panel-race" role="tabpanel" aria-labelledby="tab-race">
+    <div class="race-head">
+      <h2 class="race-title chalk"><span class="origin-name">광주</span>에서 <span id="raceDest">프랑스 파리</span>까지 <span id="raceKm" class="hl">9,200km</span></h2>
+      <div class="race-actions">
+        <span class="clock" id="clock">⏱ 출발 전이에요</span>
+        <button type="button" class="btn-go" id="raceBtn">출발!</button>
+      </div>
+    </div>
+    <ol class="lanes" id="lanes"></ol>
+    <p class="fact" id="fact"></p>
+  </section>
+
+  <section class="panel" id="panel-navi" role="tabpanel" aria-labelledby="tab-navi" hidden>
+    <div class="navi-controls">
+      <div class="ctl">
+        <p class="ctl-label">무엇을 타고 갈까?</p>
+        <div class="seg" id="modeSeg"></div>
+      </div>
+      <div class="ctl">
+        <p class="ctl-label">얼마나 빨리 보여 줄까?</p>
+        <div class="seg" id="paceSeg">
+          <button type="button" class="btn-chalk" data-pace="s15">15초 만에</button>
+          <button type="button" class="btn-chalk" data-pace="m1">1분 만에</button>
+          <button type="button" class="btn-chalk" data-pace="real">진짜 시간만큼</button>
+        </div>
+        <p class="pace-hint" id="paceHint"></p>
+      </div>
+      <label class="voice" id="voiceWrap"><input type="checkbox" id="voice" checked> 🔊 목소리로 안내하기</label>
+    </div>
+
+    <div class="screen" id="screen">
+      <p class="screen-dest"><span id="naviDest">프랑스 파리</span>까지 남은 거리와 시간</p>
+      <div class="screen-nums" aria-live="off">
+        <div class="bigkm"><span class="fit"><span id="nKm">9,200</span><span class="u" id="nUnit">km</span></span></div>
+        <div class="bigtime"><span class="fit" id="nTime">4일 19시간</span></div>
+      </div>
+      <div class="road-wrap">
+      <svg id="road" viewBox="0 0 640 215" aria-hidden="true">
+        <path class="road-band" d="M70 172 C150 172 170 70 265 70 S390 182 475 170 S575 82 590 74"/>
+        <path class="road-center" id="roadCenter" d="M70 172 C150 172 170 70 265 70 S390 182 475 170 S575 82 590 74"/>
+        <path class="road-done" id="roadDone" d="M70 172 C150 172 170 70 265 70 S390 182 475 170 S575 82 590 74"/>
+        <g id="cps">
+          <g class="cp"><circle r="8"/><text></text></g>
+          <g class="cp"><circle r="8"/><text></text></g>
+          <g class="cp"><circle r="8"/><text></text></g>
+        </g>
+        <text class="emoji" x="30" y="166" font-size="34">🏠</text>
+        <text class="road-label origin-name" x="32" y="206">광주</text>
+        <text class="emoji" x="618" y="50" font-size="34">🏁</text>
+      </svg>
+      <span class="veh" id="veh" aria-hidden="true"></span>
+      </div>
+      <div class="arrive" id="arrive" hidden>도착! 🎉</div>
+      <div class="screen-btns">
+        <button type="button" class="btn-go" id="naviGo">▶ 안내 시작</button>
+        <button type="button" class="btn-chalk" id="naviReset">처음부터</button>
+      </div>
+    </div>
+
+    <div class="log">
+      <div class="log-head">
+        <h3 class="chalk">칠판에 적어 보기</h3>
+        <p class="log-hint">길을 4번 나눠서, 지나갈 때마다 남은 거리와 시간을 적어요. 진짜 칠판에도 같이 써 봐요.</p>
+      </div>
+      <ol id="log"></ol>
+    </div>
+  </section>
+
+  <details class="grown" id="grown">
+    <summary>어른용 · 평균 속도 바꾸기</summary>
+    <div class="speed-grid" id="speedGrid"></div>
+    <button type="button" class="btn-chalk" id="speedReset">처음 값으로 되돌리기</button>
+  </details>
+
+  <p class="foot">모두 평균 빠르기로 쉬지 않고 간다고 생각하고 계산했어요. 실제로는 쉬는 시간, 신호등, 공항에서 기다리는 시간 때문에 더 걸려요.</p>
+  <div class="tray" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i><b class="eraser"></b></div>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s, el = document) => el.querySelector(s);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('chalk-navi:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('chalk-navi:' + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- data ----------
+  const DEFAULT_SPEEDS = { walk: 4, car: 80, train: 150, plane: 800 };
+  const MODES = [
+    { id: 'walk', name: '걷기', emoji: '🚶', color: 'var(--yellow)', flip: true,
+      desc: '어른이 보통 걷는 빠르기예요. 어린이는 시속 3km쯤이에요.' },
+    { id: 'car', name: '자동차', emoji: '🚗', color: 'var(--pink)', flip: true,
+      desc: '고속도로를 달릴 때의 평균이에요. 시내에서는 신호등 때문에 시속 30km쯤이에요.' },
+    { id: 'train', name: '기차', emoji: '🚄', color: 'var(--blue)', flip: true,
+      desc: 'KTX가 중간 역에 서는 시간까지 합친 평균이에요. 가장 빠를 때는 시속 300km예요.' },
+    { id: 'plane', name: '비행기', emoji: '✈️', color: 'var(--orange)', flip: false,
+      desc: '하늘 높이 날 때의 평균이에요. 공항에 가고 기다리는 시간은 빼고 셌어요.' }
+  ];
+  // 출발지. 바꾸면 PLACES의 거리와 설명도 그 도시 기준으로 다시 적어야 한다.
+  const ORIGIN = '광주';
+  const PLACES = [
+    { id: 'daycare', icon: '🧸', name: '어린이집', km: 0.03, note: '집에서 아주 가까워요. 30m는 몇 걸음일까요?' },
+    { id: 'school', icon: '🏫', name: '학교', km: 0.3, note: '300m는 어린이집까지 거리(30m)의 10배예요.' },
+    { id: 'dad', icon: '👨‍🔬', name: '아빠 회사', km: 14, note: '아빠가 매일 회사에 가는 길이에요.' },
+    { id: 'mom', icon: '👩‍🏫', name: '엄마 회사', km: 24, note: '엄마가 매일 나주로 출근하는 길이에요.' },
+    { id: 'seoul', icon: '🏙️', name: '서울', km: 300, note: '광주에서 서울까지 자동차 길은 약 300km예요.' },
+    { id: 'busan', icon: '🌊', name: '부산', km: 260, note: '광주에서 부산까지 자동차 길은 약 260km예요.' },
+    { id: 'jeju', icon: '🍊', name: '제주도', km: 190, note: '제주도는 바다 건너에 있어요. 하늘길로 약 190km예요. 걷기·자동차·기차는 바다 위에 길이 있다고 상상해 봐요!' },
+    { id: 'tokyo', icon: '🗼', name: '일본 도쿄', km: 1160, note: '일본도 바다를 건너야 해요. 바다 위에 길이 있다고 상상해 봐요!' },
+    { id: 'paris', icon: '🥐', name: '프랑스 파리', km: 9200, note: '하늘길로 곧장 가면 약 9,200km예요. 땅으로 가면 여러 나라를 지나서 더 멀어요.' },
+    { id: 'ny', icon: '🗽', name: '미국 뉴욕', km: 11300, note: '가는 길에 아주 큰 바다(태평양)가 있어요. 바다 위에 길이 있다고 상상해 봐요!' },
+    { id: 'earth', icon: '🌏', name: '지구 한 바퀴', km: 40000, note: '지구를 한 바퀴 빙 돌면 약 40,000km예요.' },
+    { id: 'moon', icon: '🌙', name: '달', km: 384400, note: '달까지는 길이 없어요. 하늘까지 길이 있다면 얼마나 걸릴까요?' }
+  ];
+  const MEDALS = ['🥇', '🥈', '🥉', '4등'];
+
+  function loadSpeeds() {
+    const out = Object.assign({}, DEFAULT_SPEEDS);
+    const saved = store.get('speeds', null);
+    if (saved && typeof saved === 'object') {
+      for (const k in out) { const v = +saved[k]; if (v > 0 && v <= 5000) out[k] = v; }
+    }
+    return out;
+  }
+  let speeds = loadSpeeds();
+  const state = { km: 9200, place: 'paris' };
+
+  // ---------- formatting ----------
+  const nf0 = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 });
+  const nf1 = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 1 });
+  const fmtKm = x => (x >= 100 ? nf0 : nf1).format(x);
+  const fmtKmCeil = x => x <= 0 ? '0' : x < 10 ? nf1.format(Math.ceil(x * 10) / 10) : nf0.format(Math.ceil(x));
+  const nf3 = new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 3 });
+  // 1km보다 짧은 거리는 m로 보여 준다. [숫자, 단위]
+  function distParts(km, R = Math.round) {
+    if (km > 0 && km < 1) return [nf0.format(Math.max(1, R(km * 1000))), 'm'];
+    return [R === Math.ceil ? fmtKmCeil(km) : fmtKm(km), 'km'];
+  }
+  const fmtDist = (km, R) => distParts(km, R).join('');
+
+  // hours -> "2시간 30분", "45초", "93일 18시간", "10년 352일"
+  function fmtDur(hours, R = Math.round) {
+    if (!(hours > 0)) return '0분';
+    const sec = hours * 3600;
+    if (sec < 60) { const s = Math.max(1, R(sec)); if (s < 60) return s + '초'; }
+    const min = Math.max(1, R(sec / 60));
+    if (min < 60) return min + '분';
+    if (min < 1440) { const h = Math.floor(min / 60), m = min % 60; return m ? `${h}시간 ${m}분` : `${h}시간`; }
+    const H = R(hours), d = Math.floor(H / 24), h = H % 24;
+    if (d >= 365) { const y = Math.floor(d / 365), dd = d % 365; return dd ? `${y}년 ${dd}일` : `${y}년`; }
+    return h ? `${d}일 ${h}시간` : `${d}일`;
+  }
+
+  const DIG = ['영', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+  function readInt(n) {
+    if (n === 0) return '영';
+    const small = ['', '십', '백', '천'], big = ['', '만', '억', '조'], parts = [];
+    for (let gi = 0; n > 0; gi++, n = Math.floor(n / 10000)) {
+      const g = n % 10000;
+      if (!g) continue;
+      const ds = String(g).padStart(4, '0');
+      let s = '';
+      for (let i = 0; i < 4; i++) {
+        const d = +ds[i], pos = 3 - i;
+        if (d) s += (d === 1 && pos > 0 ? '' : DIG[d]) + small[pos];
+      }
+      if (gi === 1 && g === 1) s = '';
+      parts.unshift(s + big[gi]);
+    }
+    return parts.join(' ');
+  }
+  function readKorean(x) {
+    const [i, f] = String(Math.round(x * 1000) / 1000).split('.');
+    return readInt(+i) + (f ? ' 점 ' + [...f].map(d => DIG[+d]).join('') : '');
+  }
+  // "구천이백 킬로미터", 1km보다 짧으면 "삼십 미터"
+  const readDist = km => km > 0 && km < 1 ? readInt(Math.round(km * 1000)) + ' 미터' : readKorean(km) + ' 킬로미터';
+  const spokenDist = km => km > 0 && km < 1 ? `${Math.round(km * 1000)}미터` : `${Math.round(km * 10) / 10}킬로미터`;
+
+  // ---------- elements ----------
+  const kmInput = $('#km'), destInput = $('#dest'), reading = $('#reading'), note = $('#note');
+  const placesEl = $('#places'), raceDest = $('#raceDest'), raceKm = $('#raceKm'), clock = $('#clock');
+  const raceBtn = $('#raceBtn'), lanesEl = $('#lanes'), fact = $('#fact');
+  const tabRace = $('#tab-race'), tabNavi = $('#tab-navi'), panelRace = $('#panel-race'), panelNavi = $('#panel-navi');
+  const modeSeg = $('#modeSeg'), paceSeg = $('#paceSeg'), paceHint = $('#paceHint'), voiceBox = $('#voice');
+  const screenEl = $('#screen'), naviDest = $('#naviDest'), nKm = $('#nKm'), nUnit = $('#nUnit'), nTime = $('#nTime');
+  const roadSvg = $('#road'), roadCenter = $('#roadCenter'), roadDone = $('#roadDone'), cpsEl = $('#cps'), veh = $('#veh');
+  const arriveEl = $('#arrive'), naviGo = $('#naviGo'), logEl = $('#log');
+
+  const destName = () => destInput.value.trim() || '목적지';
+
+  document.querySelectorAll('.origin-name').forEach(el => { el.textContent = ORIGIN; });
+
+  // ---------- places: presets + the family's own destinations ----------
+  const MY_ICONS = ['🏠', '👵', '🏫', '🏞️', '🏖️', '⛰️', '🎢', '🦁', '🍦', '⭐'];
+  const MAX_MY_PLACES = 30;
+  const editBtn = $('#editPlaces'), undoEl = $('#undo'), undoText = $('#undoText');
+  const addForm = $('#addForm'), addName = $('#addName'), addKm = $('#addKm'), addError = $('#addError'), iconPick = $('#iconPick');
+
+  function loadMyPlaces() {
+    const saved = store.get('myPlaces', []);
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .filter(p => p && typeof p.name === 'string' && p.name.trim() && +p.km > 0 && +p.km <= 1000000)
+      .slice(0, MAX_MY_PLACES)
+      .map((p, i) => ({
+        id: typeof p.id === 'string' && p.id.startsWith('my-') ? p.id : `my-old${i}`,
+        icon: typeof p.icon === 'string' && p.icon && p.icon.length <= 8 ? p.icon : '⭐',
+        name: p.name.trim().slice(0, 12),
+        km: Math.round(+p.km * 1000) / 1000
+      }));
+  }
+  let myPlaces = loadMyPlaces();
+  let editing = false, lastRemoved = null;
+  const saveMyPlaces = () => store.set('myPlaces', myPlaces);
+  const findPlace = id => PLACES.find(p => p.id === id) || myPlaces.find(p => p.id === id);
+  // 받침이 있으면 '을', 없으면 '를'
+  const eulReul = word => {
+    const c = word.charCodeAt(word.length - 1) - 0xAC00;
+    return c >= 0 && c <= 11171 ? (c % 28 ? '을' : '를') : '을(를)';
+  };
+
+  function placeButton(p, mine) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-chalk place' + (mine ? ' mine' : '') + (p.name.replace(/\s/g, '').length >= 6 ? ' wide' : '');
+    b.dataset.id = p.id;
+    const icon = document.createElement('span');
+    icon.className = 'pi';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = p.icon;
+    const text = document.createElement('span');
+    text.textContent = p.name;
+    const small = document.createElement('small');
+    small.textContent = fmtDist(p.km);
+    text.appendChild(small);
+    b.append(icon, text);
+    if (mine) {
+      const x = document.createElement('span');
+      x.className = 'x';
+      x.setAttribute('aria-hidden', 'true');
+      x.textContent = '✕';
+      b.appendChild(x);
+    }
+    return b;
+  }
+  function renderPlaces() {
+    if (!myPlaces.length) editing = false;
+    placesEl.textContent = '';
+    PLACES.forEach(p => placesEl.appendChild(placeButton(p, false)));
+    myPlaces.forEach(p => placesEl.appendChild(placeButton(p, true)));
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'btn-chalk place add';
+    add.dataset.action = 'add';
+    add.setAttribute('aria-controls', 'addForm');
+    add.setAttribute('aria-expanded', String(!addForm.hidden));
+    add.textContent = '+ 도착지 추가';
+    placesEl.appendChild(add);
+    placesEl.classList.toggle('editing', editing);
+    editBtn.hidden = !myPlaces.length;
+    editBtn.textContent = editing ? '다 했어요' : '고치기';
+    editBtn.setAttribute('aria-pressed', String(editing));
+    updatePlaceUI();
+  }
+  function updatePlaceUI() {
+    placesEl.querySelectorAll('.place[data-id]').forEach(b => {
+      b.setAttribute('aria-pressed', String(b.dataset.id === state.place));
+      const p = findPlace(b.dataset.id);
+      if (editing && b.classList.contains('mine') && p) b.setAttribute('aria-label', `${p.name} 지우기`);
+      else b.removeAttribute('aria-label');
+    });
+    const p = findPlace(state.place);
+    note.hidden = !(p && p.note);
+    note.textContent = p && p.note ? p.note : '';
+  }
+
+  function removePlace(id) {
+    const i = myPlaces.findIndex(p => p.id === id);
+    if (i < 0) return;
+    lastRemoved = { place: myPlaces[i], index: i };
+    myPlaces.splice(i, 1);
+    saveMyPlaces();
+    if (state.place === id) state.place = null;
+    undoText.textContent = `‘${lastRemoved.place.name}’${eulReul(lastRemoved.place.name)} 지웠어요.`;
+    undoEl.hidden = false;
+    renderPlaces();
+  }
+  $('#undoBtn').addEventListener('click', () => {
+    if (!lastRemoved) return;
+    myPlaces.splice(Math.min(lastRemoved.index, myPlaces.length), 0, lastRemoved.place);
+    saveMyPlaces();
+    lastRemoved = null;
+    undoEl.hidden = true;
+    renderPlaces();
+  });
+  editBtn.addEventListener('click', () => {
+    editing = !editing;
+    if (editing) addForm.hidden = true;
+    renderPlaces();
+  });
+
+  MY_ICONS.forEach((ic, i) => {
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'addIcon';
+    input.id = 'add-icon-' + i;
+    input.value = ic;
+    input.checked = i === 0;
+    const label = document.createElement('label');
+    label.htmlFor = input.id;
+    label.textContent = ic;
+    iconPick.append(input, label);
+  });
+  function openAddForm() {
+    editing = false;
+    const typed = destInput.value.trim();
+    // 직접 적은 목적지와 거리가 있으면 미리 채워 준다
+    addName.value = typed && !state.place ? typed.slice(0, 12) : '';
+    addKm.value = state.km > 0 && !state.place ? nf3.format(state.km) : '';
+    addError.hidden = true;
+    addForm.hidden = false;
+    renderPlaces();
+    addForm.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+    try { addName.focus({ preventScroll: true }); } catch (e) { addName.focus(); }
+  }
+  function closeAddForm() {
+    addForm.hidden = true;
+    renderPlaces();
+  }
+  function showAddError(msg, field) {
+    addError.textContent = msg;
+    addError.hidden = false;
+    if (field) field.focus();
+  }
+  $('#addCancel').addEventListener('click', closeAddForm);
+  addForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = addName.value.trim().slice(0, 12);
+    const km = parseKm(addKm.value);
+    if (!name) return showAddError('이름을 적어 주세요.', addName);
+    if (!(km > 0)) return showAddError('거리를 숫자로 적어 주세요.', addKm);
+    const icon = (iconPick.querySelector('input:checked') || {}).value || '⭐';
+    let p = myPlaces.find(x => x.name === name);
+    if (p) {
+      p.km = km;
+      p.icon = icon;
+    } else {
+      if (myPlaces.length >= MAX_MY_PLACES) return showAddError(`도착지는 ${MAX_MY_PLACES}개까지 만들 수 있어요. 안 쓰는 것을 지워 주세요.`);
+      p = { id: 'my-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), icon, name, km };
+      myPlaces.push(p);
+    }
+    saveMyPlaces();
+    lastRemoved = null;
+    undoEl.hidden = true;
+    addForm.hidden = true;
+    renderPlaces();
+    destInput.value = p.name;
+    setKm(p.km, p.id);
+  });
+
+  placesEl.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.action === 'add') {
+      if (addForm.hidden) openAddForm(); else closeAddForm();
+      return;
+    }
+    const p = findPlace(b.dataset.id);
+    if (!p) return;
+    if (editing && b.classList.contains('mine')) { removePlace(p.id); return; }
+    destInput.value = p.name;
+    setKm(p.km, p.id);
+  });
+
+  // ---------- build: race lanes ----------
+  const lanes = MODES.map(m => {
+    const li = document.createElement('li');
+    li.className = 'lane';
+    li.style.setProperty('--c', m.color);
+    li.innerHTML = `
+      <div class="lane-top">
+        <span class="who"><span class="emo" aria-hidden="true">${m.emoji}</span>${m.name}<span class="medal"></span></span>
+        <span class="spd"></span>
+        <span class="time"></span>
+      </div>
+      <div class="track-wrap" aria-hidden="true">
+        <div class="track"><span class="trail"></span><span class="rail"><span class="mover"><span class="e${m.flip ? ' flip' : ''}${m.id === 'plane' ? ' tilt' : ''}">${m.emoji}</span></span></span></div>
+        <span class="flag">🏁</span>
+      </div>
+      <div class="lane-sub"></div>`;
+    lanesEl.appendChild(li);
+    return { li, spd: $('.spd', li), time: $('.time', li), sub: $('.lane-sub', li), medal: $('.medal', li), rail: $('.rail', li), trail: $('.trail', li) };
+  });
+  // 같은 글이면 다시 쓰지 않는다 (매 장면마다 글을 바꾸면 휴대폰에서 화면이 끊김)
+  const setText = (el, s) => { if (el.textContent !== s) el.textContent = s; };
+  function setLaneP(L, p) {
+    L.rail.style.transform = `translate3d(${(p * 100).toFixed(3)}%, 0, 0)`;
+    L.trail.style.transform = `scaleX(${p.toFixed(4)})`;
+  }
+
+  // ---------- build: navi mode buttons ----------
+  const navi = {
+    mode: MODES.some(m => m.id === store.get('naviMode', 'car')) ? store.get('naviMode', 'car') : 'car',
+    pace: ['s15', 'm1', 'real'].includes(store.get('pace', 's15')) ? store.get('pace', 's15') : 's15',
+    state: 'idle', p: 0, elapsed: 0, last: 0, raf: 0, cp: 0
+  };
+  const modeBtns = MODES.map(m => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-chalk';
+    b.style.setProperty('--c', m.color);
+    b.innerHTML = `<span class="emo" aria-hidden="true">${m.emoji}</span> ${m.name}`;
+    b.addEventListener('click', () => {
+      navi.mode = m.id;
+      store.set('naviMode', m.id);
+      naviReset();
+    });
+    modeSeg.appendChild(b);
+    return b;
+  });
+  const paceBtns = [...paceSeg.querySelectorAll('button')];
+  paceBtns.forEach(b => b.addEventListener('click', () => {
+    const p = navi.p;
+    navi.pace = b.dataset.pace;
+    store.set('pace', navi.pace);
+    navi.elapsed = p * paceDur();   // keep the car where it is, just change the speed
+    updatePaceUI();
+  }));
+
+  // ---------- build: grown-up speed settings ----------
+  const speedGrid = $('#speedGrid');
+  MODES.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'speed-row';
+    row.innerHTML = `
+      <label class="sp-name" for="sp-${m.id}"><span class="emo" aria-hidden="true">${m.emoji}</span> ${m.name}</label>
+      <span class="sp-in">시속 <input id="sp-${m.id}" type="number" inputmode="decimal" min="0.1" max="5000" step="any" value="${speeds[m.id]}"> km</span>
+      <p>${m.desc}</p>`;
+    speedGrid.appendChild(row);
+    $('input', row).addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      if (v > 0 && v <= 5000) { speeds[m.id] = v; store.set('speeds', speeds); refresh(); }
+    });
+  });
+  $('#speedReset').addEventListener('click', () => {
+    speeds = Object.assign({}, DEFAULT_SPEEDS);
+    store.set('speeds', speeds);
+    MODES.forEach(m => { $('#sp-' + m.id).value = speeds[m.id]; });
+    refresh();
+  });
+
+  // ---------- distance input ----------
+  // 숫자만 적으면 km, "300m"·"300미터"처럼 적으면 m로 읽는다
+  function parseKm(s) {
+    const str = String(s).trim().toLowerCase();
+    const v = parseFloat(str.replace(/[^0-9.]/g, ''));
+    if (!isFinite(v) || v < 0) return 0;
+    const meters = /\d\s*(m|미터)$/.test(str) && !/km|킬로/.test(str);
+    return Math.min(1000000, Math.round((meters ? v / 1000 : v) * 1000) / 1000);
+  }
+  function leavePlace() {
+    const p = findPlace(state.place);
+    if (p && destInput.value.trim() === p.name) destInput.value = '';
+    state.place = null;
+  }
+  function setKm(v, placeId) {
+    if (!placeId) leavePlace();
+    state.km = v;
+    state.place = placeId || null;
+    kmInput.value = v > 0 ? nf3.format(v) : '';
+    refresh();
+  }
+  kmInput.addEventListener('input', () => {
+    leavePlace();
+    state.km = parseKm(kmInput.value);
+    refresh();
+  });
+  kmInput.addEventListener('blur', () => { kmInput.value = state.km > 0 ? nf3.format(state.km) : ''; });
+  kmInput.addEventListener('keydown', e => { if (e.key === 'Enter') kmInput.blur(); });
+  $('#steps').addEventListener('click', e => {
+    const b = e.target.closest('button[data-step]');
+    if (b) setKm(Math.max(0, Math.round((state.km + Number(b.dataset.step)) * 1000) / 1000), null);
+  });
+  destInput.addEventListener('input', () => {
+    raceDest.textContent = destName();
+    naviDest.textContent = destName();
+  });
+
+  // ---------- race ----------
+  const race = { raf: 0 };
+  function laneDefaultSub(m, T) {
+    if (state.km <= 0) return '';
+    const bits = [];
+    if (m.id === 'plane' && state.km < 100) bits.push('이렇게 가까운 곳은 보통 비행기를 안 타요');
+    if (T >= 24) bits.push(`= ${nf0.format(Math.round(T))}시간`);
+    if (m.id === 'walk' && T > 8) bits.push(`하루 8시간씩 걸으면 약 ${nf0.format(Math.ceil(T / 8))}일`);
+    return bits.join(' · ');
+  }
+  function resetRace() {
+    cancelAnimationFrame(race.raf);
+    lanes.forEach((L, i) => {
+      const m = MODES[i];
+      setLaneP(L, 0);
+      L.li.classList.remove('arrived');
+      L.medal.textContent = '';
+      L.sub.textContent = laneDefaultSub(m, state.km / speeds[m.id]);
+    });
+    clock.textContent = '⏱ 출발 전이에요';
+    raceBtn.textContent = '출발!';
+    raceBtn.disabled = state.km <= 0;
+  }
+  function startRace() {
+    if (state.km <= 0) return;
+    resetRace();
+    const km = state.km;
+    const times = MODES.map(m => km / speeds[m.id]);
+    const Tmin = Math.min(...times), Tmax = Math.max(...times), r = Tmax / Tmin;
+    // One shared clock that speeds up: everyone moves at their true relative speed,
+    // the fastest arrives after ~2s, and the slowest still arrives within a few seconds.
+    const t1 = 1.8, D = r > 1.001 ? Math.min(12, t1 + 2.3 * Math.log10(r)) : t1;
+    const vAt = t => t <= t1 ? Tmin * t / t1
+      : r > 1.001 ? Math.min(Tmax, Tmin * Math.pow(r, (t - t1) / (D - t1))) : Tmin;
+    const ranks = times.map(T => times.filter(o => o < T - 1e-9).length);
+    const arrived = new Set();
+    raceBtn.disabled = true;
+    raceBtn.textContent = '달리는 중…';
+    const t0 = performance.now();
+    let lastText = -1;
+    const step = now => {
+      const t = (now - t0) / 1000;
+      const done = reduceMotion || t >= D;
+      const vt = done ? Tmax : vAt(t);
+      // 탈것 위치는 매 장면, 글씨는 0.15초마다만 바꾼다
+      const writeText = done || now - lastText >= 150;
+      if (writeText) lastText = now;
+      lanes.forEach((L, i) => {
+        const T = times[i], p = Math.min(1, vt / T);
+        setLaneP(L, p);
+        if (p >= 1) {
+          if (!arrived.has(i)) {
+            arrived.add(i);
+            L.li.classList.add('arrived');
+            L.medal.textContent = MEDALS[ranks[i]] || '';
+            L.sub.textContent = `도착! 0km 0분 · ${fmtDur(T)} 걸렸어요`;
+          }
+        } else if (writeText) {
+          setText(L.sub, `남은 거리 ${fmtDist(km * (1 - p), Math.ceil)} · 남은 시간 ${fmtDur(T - vt, Math.ceil)}`);
+        }
+      });
+      if (writeText) setText(clock, `⏱ ${fmtDur(vt)} 지났어요`);
+      if (done) {
+        raceBtn.disabled = false;
+        raceBtn.textContent = '다시 출발!';
+      } else {
+        race.raf = requestAnimationFrame(step);
+      }
+    };
+    race.raf = requestAnimationFrame(step);
+  }
+  raceBtn.addEventListener('click', startRace);
+
+  // ---------- speech ----------
+  const canSpeak = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+  let koVoice = null;
+  function pickVoice() {
+    try { koVoice = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang)) || null; } catch (e) { koVoice = null; }
+  }
+  if (canSpeak) {
+    pickVoice();
+    try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {}
+    voiceBox.checked = store.get('voice', true) !== false;
+    voiceBox.addEventListener('change', () => {
+      store.set('voice', voiceBox.checked);
+      if (!voiceBox.checked) { try { speechSynthesis.cancel(); } catch (e) {} }
+    });
+  } else {
+    $('#voiceWrap').hidden = true;
+  }
+  function say(text, force) {
+    if (!canSpeak || !voiceBox.checked) return;
+    try {
+      if (force) speechSynthesis.cancel();
+      else if (speechSynthesis.speaking) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ko-KR';
+      if (koVoice) u.voice = koVoice;
+      u.rate = 1.05;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // ---------- wake lock (keep the phone screen on while the navi runs) ----------
+  let wake = null;
+  async function requestWake() {
+    try { if ('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); } catch (e) { wake = null; }
+  }
+  function releaseWake() {
+    try { if (wake) wake.release(); } catch (e) {}
+    wake = null;
+  }
+
+  // ---------- navi ----------
+  const naviMode = () => MODES.find(m => m.id === navi.mode) || MODES[1];
+  const naviT = () => state.km / speeds[navi.mode];
+  const paceDur = () => navi.pace === 's15' ? 15 : navi.pace === 'm1' ? 60 : Math.max(1, naviT() * 3600);
+
+  const ROAD_VIEW_W = 640, VEH_SIZE = 44;  // SVG viewBox 폭, 탈것 크기(viewBox 단위)
+  let roadLen = 0, roadScale = 0;
+  // 길 그림이 화면에 그려진 크기에 맞춰 탈것 크기와 위치 비율을 다시 잡는다
+  function measureRoad() {
+    const w = roadSvg.getBoundingClientRect().width;
+    if (!w) return;
+    roadScale = w / ROAD_VIEW_W;
+    veh.style.fontSize = (VEH_SIZE * roadScale).toFixed(1) + 'px';
+    placeVehicle(navi.p);
+    fitBigNumbers();
+  }
+  if ('ResizeObserver' in window) new ResizeObserver(measureRoad).observe(roadSvg);
+  else window.addEventListener('resize', measureRoad);
+  function layoutRoad() {
+    try { roadLen = roadCenter.getTotalLength(); } catch (e) { roadLen = 0; }
+    if (!roadLen) return;
+    measureRoad();
+    roadDone.style.strokeDasharray = `${roadLen} ${roadLen}`;
+    [...cpsEl.children].forEach((g, i) => {
+      const pt = roadCenter.getPointAtLength(roadLen * (i + 1) / 4);
+      const c = $('circle', g), t = $('text', g);
+      c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+      t.setAttribute('x', pt.x); t.setAttribute('y', pt.y - 26);
+    });
+    placeVehicle(navi.p);
+  }
+  function placeVehicle(p) {
+    if (!roadLen) return;
+    const L = roadLen * p;
+    const pt = roadCenter.getPointAtLength(L);
+    const a = roadCenter.getPointAtLength(Math.max(0, L - 3));
+    const b = roadCenter.getPointAtLength(Math.min(roadLen, L + 3));
+    const ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+    const x = (pt.x * roadScale).toFixed(2), y = (pt.y * roadScale).toFixed(2);
+    // transform-origin이 왼쪽 위라서: 탈것의 기준점(아래 가운데, 비행기는 한가운데)을 길 위 점에 맞추고 그 점을 중심으로 기울인다
+    veh.style.transform = navi.mode === 'plane'
+      ? `translate3d(${x}px, ${y}px, 0) rotate(${(ang + 45).toFixed(1)}deg) translate(-50%, -50%)`
+      : `translate3d(${x}px, ${y}px, 0) rotate(${Math.max(-28, Math.min(28, ang)).toFixed(1)}deg) translate(-50%, -88%)`;
+    roadDone.style.strokeDashoffset = roadLen * (1 - p);
+  }
+  let lastNaviText = 0;
+  function renderNavi(throttle) {
+    const p = navi.p, km = state.km, rem = km * (1 - p);
+    placeVehicle(p);
+    // 달리는 동안 큰 숫자는 0.1초마다만 바꾼다 (매 장면 바꾸면 휴대폰에서 끊김)
+    const now = performance.now();
+    if (throttle && p < 1 && now - lastNaviText < 100) return;
+    lastNaviText = now;
+    const [num, unit] = p >= 1 ? ['0', 'km'] : p === 0 ? distParts(km) : distParts(rem, Math.ceil);
+    const before = nKm.textContent + nUnit.textContent + nTime.textContent;
+    setText(nKm, num);
+    setText(nUnit, unit);
+    setText(nTime, km <= 0 || p >= 1 ? '0분' : p === 0 ? fmtDur(naviT()) : fmtDur(rem / speeds[navi.mode], Math.ceil));
+    if (nKm.textContent + nUnit.textContent + nTime.textContent !== before) fitBigNumbers();
+  }
+  // 큰 숫자가 칸보다 길면 비율을 줄여서 한 줄에 맞춘다
+  const fitEls = [...screenEl.querySelectorAll('.fit')];
+  function fitBigNumbers() {
+    fitEls.forEach(el => {
+      const room = el.parentElement.clientWidth, w = el.offsetWidth;
+      el.style.transform = room && w > room ? `scale(${(room / w).toFixed(3)})` : '';
+    });
+  }
+  function buildLog() {
+    const km = state.km, v = speeds[navi.mode];
+    logEl.innerHTML = '';
+    for (let k = 0; k <= 4; k++) {
+      const li = document.createElement('li');
+      if (k === 4) {
+        li.className = 'last';
+        li.innerHTML = '<span class="lk">0km</span><span class="lt">0분</span><span>도착!</span>';
+      } else {
+        const rem = km * (1 - k / 4);
+        li.innerHTML = `<span class="lk">${fmtDist(rem)}</span><span class="lt">${fmtDur(rem / v)}</span>`;
+      }
+      logEl.appendChild(li);
+    }
+    [...cpsEl.children].forEach((g, i) => {
+      g.classList.remove('on');
+      $('text', g).textContent = fmtDist(km * (1 - (i + 1) / 4));
+    });
+  }
+  function updatePaceUI() {
+    paceBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pace === navi.pace)));
+    const T = naviT(), real = T * 3600;
+    if (state.km <= 0) { paceHint.textContent = ''; return; }
+    if (navi.pace === 'real') {
+      paceHint.textContent = `진짜로 ${fmtDur(T)} 동안 천천히 안내해요.`;
+    } else {
+      const sec = navi.pace === 's15' ? 15 : 60;
+      paceHint.textContent = real > sec
+        ? `${fmtDur(T)} 걸리는 길을 ${sec === 15 ? '15초로' : '1분으로'} 줄여서 보여 줘요.`
+        : `${fmtDur(T)} 걸리는 길을 ${sec === 15 ? '15초' : '1분'} 동안 천천히 보여 줘요.`;
+    }
+  }
+  function updateNaviBtn() {
+    naviGo.textContent = { idle: '▶ 안내 시작', running: '⏸ 잠깐 멈춤', paused: '▶ 계속 가기', arrived: '↺ 다시 하기' }[navi.state];
+    naviGo.disabled = state.km <= 0;
+  }
+  function naviReset() {
+    cancelAnimationFrame(navi.raf);
+    navi.state = 'idle'; navi.p = 0; navi.elapsed = 0; navi.cp = 0;
+    releaseWake();
+    arriveEl.hidden = true;
+    const m = naviMode();
+    screenEl.style.setProperty('--c', m.color);
+    veh.innerHTML = `<span class="e${m.flip ? ' flip' : ''}">${m.emoji}</span>`;
+    modeBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(MODES[i].id === navi.mode)));
+    buildLog();
+    updatePaceUI();
+    renderNavi();
+    updateNaviBtn();
+  }
+  function reachCp(k) {
+    navi.cp = k;
+    const li = logEl.children[k];
+    if (li) li.classList.add('on');
+    if (k >= 1 && k <= 3) cpsEl.children[k - 1].classList.add('on');
+    const d = destName(), km = state.km;
+    if (k === 0) {
+      say(`경로 안내를 시작합니다. ${ORIGIN}에서 ${d}까지 ${spokenDist(km)}, ${fmtDur(naviT())} 걸립니다.`, true);
+    } else if (k < 4) {
+      const rem = km * (1 - k / 4);
+      say(`${d}까지 ${spokenDist(rem)}, ${fmtDur(rem / speeds[navi.mode])} 남았습니다.`);
+    } else {
+      say(`${d}에 도착했습니다. 경로 안내를 종료합니다.`, true);
+    }
+  }
+  function naviStep(now) {
+    navi.elapsed += Math.max(0, (now - navi.last) / 1000);
+    navi.last = now;
+    navi.p = Math.min(1, navi.elapsed / paceDur());
+    while (navi.cp < 4 && navi.p >= (navi.cp + 1) / 4) reachCp(navi.cp + 1);
+    renderNavi(true);
+    if (navi.p >= 1) {
+      navi.state = 'arrived';
+      arriveEl.hidden = false;
+      releaseWake();
+      updateNaviBtn();
+      return;
+    }
+    navi.raf = requestAnimationFrame(naviStep);
+  }
+  naviGo.addEventListener('click', () => {
+    if (state.km <= 0) return;
+    if (navi.state === 'arrived') naviReset();
+    if (navi.state === 'idle') {
+      if (!roadLen) layoutRoad();
+      navi.state = 'running';
+      navi.last = performance.now();
+      reachCp(0);
+      requestWake();
+      navi.raf = requestAnimationFrame(naviStep);
+    } else if (navi.state === 'running') {
+      navi.state = 'paused';
+      cancelAnimationFrame(navi.raf);
+      releaseWake();
+    } else if (navi.state === 'paused') {
+      navi.state = 'running';
+      navi.last = performance.now();
+      requestWake();
+      navi.raf = requestAnimationFrame(naviStep);
+    }
+    updateNaviBtn();
+  });
+  $('#naviReset').addEventListener('click', () => {
+    if (canSpeak) { try { speechSynthesis.cancel(); } catch (e) {} }
+    naviReset();
+  });
+
+  // ---------- tabs ----------
+  function showTab(id) {
+    const isRace = id !== 'navi';
+    tabRace.setAttribute('aria-selected', String(isRace));
+    tabNavi.setAttribute('aria-selected', String(!isRace));
+    panelRace.hidden = !isRace;
+    panelNavi.hidden = isRace;
+    store.set('tab', isRace ? 'race' : 'navi');
+    if (!isRace) layoutRoad();
+  }
+  tabRace.addEventListener('click', () => showTab('race'));
+  tabNavi.addEventListener('click', () => showTab('navi'));
+
+  // ---------- refresh everything after a distance or speed change ----------
+  function refresh() {
+    const km = state.km;
+    reading.innerHTML = km <= 0 ? '거리를 숫자로 적어 주세요.'
+      : `읽는 법: <b>${readDist(km)}</b>` + (km < 1 ? ' · 1km는 1,000m예요' : '');
+    raceDest.textContent = destName();
+    naviDest.textContent = destName();
+    raceKm.textContent = fmtDist(km);
+
+    updatePlaceUI();
+
+    lanes.forEach((L, i) => {
+      const m = MODES[i];
+      L.spd.textContent = `평균 시속 ${nf1.format(speeds[m.id])}km`;
+      L.time.textContent = km > 0 ? fmtDur(km / speeds[m.id]) : '–';
+    });
+    resetRace();
+
+    const sorted = MODES.map(m => ({ m, v: speeds[m.id] })).sort((a, b) => b.v - a.v);
+    const fast = sorted[0], slow = sorted[sorted.length - 1], ratio = fast.v / slow.v;
+    if (ratio >= 1.5) {
+      const r = ratio >= 10 ? nf0.format(Math.round(ratio)) : nf1.format(Math.round(ratio * 10) / 10);
+      fact.innerHTML = `${fast.m.name}는 ${slow.m.name}보다 <b>${r}배</b> 빨라요. ${fast.m.name}가 1시간 가는 거리를 ${slow.m.name}로 가면 <b>${r}시간</b> 걸려요.`;
+      fact.hidden = false;
+    } else {
+      fact.hidden = true;
+    }
+    naviReset();
+  }
+
+  // ---------- start ----------
+  layoutRoad();
+  renderPlaces();
+  kmInput.value = nf3.format(state.km);
+  refresh();
+  const hash = (location.hash || '').replace('#', '');
+  showTab(hash === 'navi' || hash === 'race' ? hash : store.get('tab', 'race'));
+})();
+</script>
+</body>
+</html>
